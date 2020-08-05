@@ -5361,10 +5361,16 @@ exports.actions = actions;
 
 var _xstate = require("xstate");
 
+var MAX_DURATION = 30000;
+var resetButton = document.querySelector("#reset");
+var slider = document.querySelector("#slider");
+var output = document.querySelector("#output");
+var guage = document.querySelector("#guage");
 var machine = (0, _xstate.createMachine)({
   initial: "active",
   context: {
-    elapsedTime: 0
+    elapsedTime: 0,
+    max: 3.0
   },
   states: {
     active: {
@@ -5384,9 +5390,9 @@ var machine = (0, _xstate.createMachine)({
       on: {
         ADD_TENTH: [{
           cond: function cond(ctx, event) {
-            return ctx.elapsedTime < 5 ? false : true;
+            return ctx.elapsedTime < 30 ? false : true;
           },
-          target: "final"
+          target: "elapsed"
         }, {
           actions: (0, _xstate.assign)({
             elapsedTime: function elapsedTime(ctx, event) {
@@ -5394,28 +5400,63 @@ var machine = (0, _xstate.createMachine)({
               return +next.toFixed(2);
             }
           })
-        }]
+        }],
+        RESET: {
+          actions: (0, _xstate.assign)({
+            elapsedTime: 0
+          })
+        },
+        SET_MAX: {
+          actions: (0, _xstate.assign)({
+            max: function max(c, e) {
+              return e.value;
+            }
+          })
+        }
       }
     },
-    final: {
-      type: "final"
+    elapsed: {
+      on: {
+        RESET: {
+          actions: (0, _xstate.assign)({
+            elapsedTime: 0
+          }),
+          target: "active"
+        },
+        SET_MAX: {
+          actions: (0, _xstate.assign)({
+            max: function max(c, e) {
+              return e.value;
+            }
+          })
+        }
+      }
     }
   }
-}, {// actions: {
-  //   kickOffTimer: (ctx, event) => {
-  //     const id = setInterval(() => {
-  //       if (ctx.elapsedTime < 1) {
-  //         assign({
-  //           elapsedTime: (ctx) => ctx.elapsedTime + 0.1,
-  //         });
-  //       } else clearTimeout(id);
-  //     }, 100);
-  //   },
-  // },
-});
+}, {});
 var service = (0, _xstate.interpret)(machine).start();
 service.onTransition(function (state) {
-  return console.log("context is", state.context.elapsedTime);
+  var _state$context = state.context,
+      elapsedTime = _state$context.elapsedTime,
+      max = _state$context.max;
+  console.log("max is", max);
+
+  if (elapsedTime >= max) {
+    output.innerHTML = "".concat(max, "s");
+    guage.style.width = "100%";
+  } else {
+    output.innerHTML = "".concat(elapsedTime, "s");
+    guage.style.width = "".concat(elapsedTime / max * 100, "%");
+  }
+});
+resetButton.addEventListener("click", function () {
+  service.send("RESET");
+});
+slider.addEventListener("input", function (e) {
+  service.send({
+    type: "SET_MAX",
+    value: e.target.valueAsNumber
+  });
 });
 },{"xstate":"node_modules/xstate/es/index.js"}],"../../../../.config/yarn/global/node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
@@ -5445,7 +5486,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "50349" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "49832" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
